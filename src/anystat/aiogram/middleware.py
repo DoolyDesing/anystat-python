@@ -3,6 +3,7 @@ from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware, Dispatcher
 from aiogram.types import Update
+from ._models.models import BaseEvent
 from .._client import Anystat
 
 dp = Dispatcher()
@@ -21,3 +22,7 @@ class AnystatMiddleware(BaseMiddleware):
 		print(event, data)
 
 		return await handler(event, data)
+	
+
+	def _get_event_model(self, update: Update) -> BaseEvent:
+		pass
