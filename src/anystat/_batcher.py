@@ -1,9 +1,9 @@
 import asyncio
+from typing import Generic, TypeVar
 
-from anystat._models.models import Event
+T = TypeVar("T")
 
-
-class AnystatBatcher:
+class AnystatBatcher(Generic[T]):
 	"""
 	Async batcher for Anystat events.
 
@@ -16,14 +16,14 @@ class AnystatBatcher:
 	"""
 
 	def __init__(self, max_batch_size: int, flush_interval: float):
-		self._buffer: list[Event] = []
+		self._buffer: list[T] = []
 		self._running = True
 		self._lock = asyncio.Lock()
 		self._max_batch_size = max_batch_size 
 		self._flush_interval = flush_interval
 		self._worker_task: asyncio.Task | None = None
 
-	async def add(self, item: Event):
+	async def add(self, item: T):
 		if self._worker_task is None:
 			self._worker_task = asyncio.create_task(self._worker())
 
@@ -56,7 +56,7 @@ class AnystatBatcher:
 		await self.flush()
 
 
-	async def _flush_batch(self, batch: list[Event]) -> None:
+	async def _flush_batch(self, batch: list[T]) -> None:
 		if not batch:
 			return None
 		

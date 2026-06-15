@@ -36,15 +36,17 @@ class AnystatMiddleware(BaseMiddleware):
 		finally:
 			duration = round(time.perf_counter() - start, 3) * 1000 #ms
 			
-			identified_user = self._identify(data) #Auto identify user
 			event_model = self._get_event_model(event, received_at, duration) 
+
+			if isinstance(event_model, StartCommandEvent):
+				identified_user = self._identify(data) #Auto identify user
+				print(identified_user)
 
 			data["received_at"] = received_at
 			data["duration"] = duration
 
 			#TODO: Отправка на сервер
 			print(event_model)
-			print(identified_user)
 			
 
 	def _get_event_model(self, event: Update, received_at: int, duration: float):

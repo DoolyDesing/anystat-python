@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import os
+from typing import TypeVar
 import httpx
 
-from ._models.models import CustomEvent
+from ._batcher import AnystatBatcher
+from ._models.models import CustomEvent, Event
 
 from ._config import AnystatConfig
 from .errors import AnystatError
-from ._constants import DEFAULT_TIMEOUT, ENV_API_KEY
+from ._constants import DEFAULT_TIMEOUT, ENV_API_KEY, FLUSH_INTERVAL, MAX_EVENT_BATCH_SIZE, MAX_IDENTIFY_BATCH_SIZE
 
+T = TypeVar("T")
 
 class Anystat:
 	"""
@@ -84,6 +87,15 @@ class Anystat:
 
 		base_config = config or AnystatConfig()
 
+		self._event_batcher = AnystatBatcher[Event](
+			max_batch_size=MAX_EVENT_BATCH_SIZE,
+			flush_interval=FLUSH_INTERVAL,
+		)
+		self._identify_batcher = AnystatBatcher[Event](
+			max_batch_size=MAX_IDENTIFY_BATCH_SIZE,
+			flush_interval=FLUSH_INTERVAL,
+		)
+
 		self.debug = debug if debug is not None else base_config.debug
 		self.track_start = track_start if track_start is not None else base_config.track_start
 		self.track_command = track_command if track_command is not None else base_config.track_command
@@ -99,3 +111,8 @@ class Anystat:
 			properties=kwargs
 		)
 	
+
+	async def close(self) -> None:
+		await self._event_batcher.kill()
+		await self._identify_batcher.kill()
+		await self._http.aclose()
